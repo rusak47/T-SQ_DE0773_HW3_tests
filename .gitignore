@@ -1,0 +1,11 @@
+/.classpath
+/.mvn
+/.project
+/.settings
+/.vscode
+/target/*
+!/target/*.jar
+!/target/cucumber-report
+!/target/surefire-reports
+!/target/allure-report
+.allure
