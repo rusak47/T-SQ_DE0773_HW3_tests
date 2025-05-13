@@ -86,15 +86,30 @@ public class OrderTests {
         long orderId = _placeOrder_Positive(131, 10);
 
         try { Thread.sleep(5000); } catch (InterruptedException ignore) {        }
-        given()
-            .accept(ContentType.JSON)
-        .when()
-            .get("/store/order/"+orderId)
-        .then()
-            .statusCode(200)
-            //.body("status", anyOf(is("placed"), is("approved"), is("delivered")))
-            .body("complete", equalTo(false))
-        ;
+        
+        boolean repeat = false;
+        int counter = 0;
+        do{ //workaround for unstable api
+            counter++;
+            try{
+                given()
+                    .accept(ContentType.JSON)
+                .when()
+                    .get("/store/order/"+orderId)
+                .then()
+                    .statusCode(200)
+                    //.body("status", anyOf(is("placed"), is("approved"), is("delivered")))
+                    .body("complete", equalTo(false))
+                ;
+
+                repeat = false;
+            } catch (AssertionError|Exception e) {
+                if (!e.getLocalizedMessage().contains("Expected status code") || counter > 7){
+                    throw e;
+                }
+                repeat = true;
+            }
+        } while (repeat);
     }
 
     @Test @Order(3)

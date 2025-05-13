@@ -78,17 +78,31 @@ public class PetstoreTests {
     }
 
     PetVO getPetById(long petId) {
-        Response response = given()
-            .header("api_key", "special-key")
-            .accept(ContentType.JSON)
-        .when()
-            .get("/pet/"+petId);
-        
-        response.then()
-            .statusCode(200)
-            .contentType(ContentType.JSON);
-            
-        return response.jsonPath().getObject("", PetVO.class);
+        boolean repeat = false;
+        int counter = 0;
+        do{ //workaround unstable api endpoint
+            counter++;
+            try{
+                Response response = given()
+                    .header("api_key", "special-key")
+                    .accept(ContentType.JSON)
+                .when()
+                    .get("/pet/"+petId);
+                
+                response.then()
+                    .statusCode(200)
+                    .contentType(ContentType.JSON);
+                
+                return response.jsonPath().getObject("", PetVO.class);
+            } catch (AssertionError|Exception e) {
+                if (!e.getLocalizedMessage().contains("Expected status code") || counter > 7){
+                    throw e;
+                }
+                repeat = true;
+            }
+        } while (repeat);
+
+        throw new AssertionError("Failed to get pet by id");
     }
 
 
@@ -123,15 +137,8 @@ public class PetstoreTests {
 
         //try { Thread.sleep(5000); } catch (InterruptedException ignore) {        }
 
-        PetVO pet = new PetVO();
-        counter = 0;
-        while(!pet.hasId() && counter < 15){ //workaround for unstable api
-            counter++;
-            try {
-                pet = getPetById(131);            
-            } catch (AssertionError |Exception ignore) { }
-            try { Thread.sleep(2000); } catch (InterruptedException ignore) {        }
-        }
+        PetVO pet =  getPetById(131); 
+        
         assertThat(pet.getStatus(), equalTo("pending"));
     }
 
@@ -139,24 +146,13 @@ public class PetstoreTests {
     @Test @Order(4)
     void updatePetWithInvalidStatus_FalsePositive() { //Server side doesnt check status validity
         long petId = 131;
-        PetVO pet = new PetVO();
-        int counter = 0;
-        while(!pet.hasId() && counter < 15){ //waiting for data to populate
-            counter++;
-            try {
-                pet = getPetById(petId);  
-                if(pet.getStatus().equals("incredible")) {pet.setId(null);}
-                        
-            } catch (AssertionError |Exception ignore) { }
-            try { Thread.sleep(2000); } catch (InterruptedException ignore) {        }
-        }
-
+        PetVO pet = getPetById(petId); 
         assertThat(pet.getStatus(), not(equalTo("incredible")));
 
         try { Thread.sleep(5000); } catch (InterruptedException ignore) {        }
 
         boolean repeat = false;
-        counter = 0;
+        int counter = 0;
         do{ //workaround for unstable api
             counter++;
             try{
@@ -228,18 +224,10 @@ public class PetstoreTests {
         
         try { Thread.sleep(5000); } catch (InterruptedException ignore) {        }
 
-        PetVO pet = new PetVO();
-        int counter = 0;
-        while(!pet.hasId() && counter < 15){ //waiting for data to populate
-            counter++;
-            try {
-                pet = getPetById(petId);            
-            } catch (AssertionError |Exception ignore) { }
-            try { Thread.sleep(2000); } catch (InterruptedException ignore) {        }
-        }
+        PetVO pet = getPetById(petId); 
         
         boolean repeat = false;
-        counter = 0;
+        int counter = 0;
         do{ //workaround for unstable api
             counter++;
             try{

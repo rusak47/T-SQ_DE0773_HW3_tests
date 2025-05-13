@@ -107,6 +107,24 @@ public class PetWireMockTests {
     }
 
     @Test
+    void mockPostCreatePet_InvalidData() {
+        stubFor(post(urlEqualTo("/pet"))
+            .willReturn(aResponse()
+                .withStatus(400)
+                .withHeader("Content-Type", "application/json")
+                .withBody("{\"message\":\"Invalid pet data\"}")));
+
+        given()
+            .contentType("application/json")
+            .body("{\"invalid\":\"data\"}")
+        .when()
+            .post("/pet")
+        .then()
+            .statusCode(400)
+            .body("message", equalTo("Invalid pet data"));
+    }
+    
+    @Test
     void mockDeletePet() {
         stubFor(delete(urlEqualTo("/pet/101"))
             .willReturn(aResponse()
@@ -121,5 +139,22 @@ public class PetWireMockTests {
         .then()
             .statusCode(200)
             .body("message", equalTo("Pet deleted successfully"));
+    }
+
+    @Test
+    void mockDeletePet_NotFound() {
+        stubFor(delete(urlEqualTo("/pet/404"))
+            .willReturn(aResponse()
+                .withStatus(404)
+                .withHeader("Content-Type", "application/json")
+                .withBody("{\"message\":\"Pet not found\"}")));
+
+        given()
+            .contentType("application/json")
+        .when()
+            .delete("/pet/404")
+        .then()
+            .statusCode(404)
+            .body("message", equalTo("Pet not found"));
     }
 }
